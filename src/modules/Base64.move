@@ -1,7 +1,6 @@
 address 0x2 {
     module Base64{
         use 0x1::Vector;
-        use 0x1::Debug;
         public fun encode(str:vector<u8>):vector<u8>{
             if(Vector::is_empty(&str)){
                 return Vector::empty<u8>()

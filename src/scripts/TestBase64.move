@@ -8,6 +8,7 @@ script {
         let str = Vector::empty<u8>();
         Vector::push_back(&mut str,66);
         Vector::push_back(&mut str,114);
+        Vector::push_back(&mut str,100);
         Debug::print(&Base64::encode(str));
     }
 }

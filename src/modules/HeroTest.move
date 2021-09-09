@@ -1,11 +1,16 @@
 address 0x2{
     module STCHeroAdventure{
-        use 0x1::Signer;
+        // use 0x1::Signer;
         use 0x1::Vector;
-        use 0x1::Block;
-        // use 0x1::Timestamp;
+        // use 0x1::Block;
+        use 0x1::Timestamp;
         use 0x1::Hash;
-        use 0x1::Account;
+        // use 0x1::Account;
+
+        const ERR_MOVE_NEW_EQ_OLD           :u64        = 1000;
+        const ERR_MOVE_IS_MOVING            :u64        = 1001;
+        const ERR_HERO_UPGRADE_EXP_TO_LESS  :u64        = 1101;
+        const ERR_HERO_UPGRADE_LEVEL_IS_MAX :u64        = 1102;
         //Att: attribute
         //ATK:Attack
         //DEF:Defense
@@ -69,7 +74,7 @@ address 0x2{
         //0 0 0 0   0 0 0 0 
         //            0 0 0 is kind of type
         //    0 0   0       is rarity  
-        fun init_Hero(account:&signer):Hero{
+        public fun Get_Rand_Hero(account:&signer):Hero{
             let rand = Get_Rand(account);
             let rand1 = *Vector::borrow(&rand,1);
             let rand2 = *Vector::borrow(&rand,2);
@@ -128,14 +133,31 @@ address 0x2{
             hero
         }
 
-        public fun Reset_Hero(_hero:&Hero){
+        public fun Get_Rand(_account:&signer):vector<u8>{
+            // let parent_hash = Block::get_parent_hash();
+            // let time        = Timestamp::now_seconds();
 
+            // let account_address =  Signer::address_of(account);
+            // let account_key = Account::authentication_key(account_address);
+            //Vector::append(&mut parent_hash,account_key);
+            let v = Vector::empty<u8>();
+            Vector::push_back<u8>(&mut v,10);
+            let hash = Hash::keccak_256(v);
+            hash
         }
         
         
 
 
         /* Hero function*/
+        public fun Reset_Hero(hero:&mut Hero){
+                Set_Hero_LEVEL  ( hero    , 0);
+                Set_Hero_EXP    ( hero    , 0);
+                let times =     Get_Hero_TIMES(hero);
+                Set_Hero_TIMES  ( hero    ,   times + 1);
+                Set_Hero_TASK   ( hero    ,   &Create_init_Task());
+        }
+
         public fun Get_Hero_LEVEL(hero:&Hero):u8{
             (*hero).LEVEL
         }
@@ -173,21 +195,21 @@ address 0x2{
         }
 
         public fun Set_Hero_ATT(hero:&mut Hero,att:&Att){
-            Set_Att_Att(&mut hero.ATT,att);
+            Set_Att_Att     (   &mut hero.ATT   ,   att);
         }
 
         public fun Set_Hero_WEP(hero:&mut Hero,wep:&Wep){
-            Set_Att_Att(&mut hero.WEP,att);
+            Set_Wep_Wep     (   &mut hero.WEP   ,   wep);
         }
 
         public fun Set_Hero_GFT(hero:&mut Hero,gift:&Gift){
-            hero.GFT
+            Set_Gift_Gift   (   &mut hero.GFT   ,   gift);
         }
         public fun Set_Hero_TASK(hero:&mut Hero,task:&Task){
-            *&hero.TASK
+            Set_Task_Task   (   &mut hero.TASK  ,   task);
         }
         public fun Set_Hero_ACT(hero:&mut Hero,action:&Action){
-            *&hero.ACT
+            Set_Action_Action(  &mut hero.ACT   ,   action);
         }
 
         /* Hero function end*/
@@ -274,8 +296,21 @@ address 0x2{
         /* Gift function end*/
         
         /* Wep function */
-        public fun Create_Wep():u8{
-            0
+        /*
+        struct Wep has key,store,drop,copy{
+            WEAP:u8,
+            BRE:u8,
+            BOT:u8,
+        }
+        */
+
+
+        public fun Create_init_Wep():Wep{
+            Wep{
+                WEAP:0,
+                BRE:0,
+                BOT:0,
+            }
         }
         public fun Reset_Wep(wep:&mut Wep){
             Set_Wep_WEAP(   wep    ,   0);
@@ -299,18 +334,18 @@ address 0x2{
         /* Wep Set function */
         
         public fun Set_Wep_Wep(wep1:&mut Wep,wep2:&Wep){
-            Set_Wep_WEAP(   Wep ,   Get_Wep_WEAP(   wep2    ));
-            Set_Wep_BRE (   Wep ,   Get_Wep_BRE (   wep2    ));
-            Set_Wep_BOT (   Wep ,   Get_Wep_BOT (   wep2    ));
+            Set_Wep_WEAP(   wep1 ,   Get_Wep_WEAP(   wep2    ));
+            Set_Wep_BRE (   wep1 ,   Get_Wep_BRE (   wep2    ));
+            Set_Wep_BOT (   wep1 ,   Get_Wep_BOT (   wep2    ));
         }
 
-        public fun Set_Wep_WEAP(wep:&Wep,weap:u8){
+        public fun Set_Wep_WEAP(wep:&mut Wep,weap:u8){
             wep.WEAP    =   weap;
         }
-        public fun Set_Wep_BRE(wep:&Wep,bre:u8){
+        public fun Set_Wep_BRE(wep:&mut Wep,bre:u8){
             wep.BRE     =   bre;
         }
-        public fun Set_Wep_BOT(wep:&Wep,bot:u8){
+        public fun Set_Wep_BOT(wep:&mut Wep,bot:u8){
             wep.BOT     =   bot;
         }
         /* Wep function end*/
@@ -329,10 +364,10 @@ address 0x2{
             Set_Action(action,1,1,0,0);
         }
         public fun Set_Action(action:&mut Action,init:u8,des:u8,init_time:u64,des_time:u64){
-            Set_Action_INIT     (    Action  ,   init           );
-            Set_Action_DES      (    Action  ,   des            );
-            Set_Action_INIT_TIME(    Action  ,   init_time      );
-            Set_Action_DES_TIME (    Action  ,   des_time       );
+            Set_Action_INIT     (    action  ,   init           );
+            Set_Action_DES      (    action  ,   des            );
+            Set_Action_INIT_TIME(    action  ,   init_time      );
+            Set_Action_DES_TIME (    action  ,   des_time       );
         }
 
         /* Action Get function */
@@ -351,6 +386,12 @@ address 0x2{
         }
 
         /* Action Set function */
+        public fun Set_Action_Action(action1:&mut Action,action2:&Action){
+            Set_Action_INIT         (   action1     ,   Get_Action_INIT     (    action2 ));
+            Set_Action_DES          (   action1     ,   Get_Action_DES      (    action2 ));
+            Set_Action_INIT_TIME    (   action1     ,   Get_Action_INIT_TIME(    action2 ));
+            Set_Action_DES_TIME     (   action1     ,   Get_Action_DES_TIME (    action2 ));
+        }
 
         public fun Set_Action_INIT(action:&mut Action,init:u8){
             action.INIT     =   init;
@@ -366,15 +407,7 @@ address 0x2{
         }
 
         /* Action function end*/
-        public fun Get_Rand(account:&signer):vector<u8>{
-            let parent_hash = Block::get_parent_hash();
-            // let time        = Timestamp::now_seconds();
-            let account_address =  Signer::address_of(account);
-            let account_key = Account::authentication_key(account_address);
-            Vector::append(&mut parent_hash,account_key);
-            let hash = Hash::keccak_256(parent_hash);
-            hash
-        }
+        
 
         //let task = Task{
         //      TARGET  :0,
@@ -387,6 +420,7 @@ address 0x2{
         //              },
         //      EXP     :0,
         //  };
+        /* Task function */
         public fun Create_init_Task():Task{
             let task = Task{
                 TARGET  :0,
@@ -401,7 +435,15 @@ address 0x2{
             };
             task
         }
-        public fun Set_Task(account:&signer,task:&mut Task){
+       
+        public fun Reset_Task(task:&mut Task){
+            Set_Task_TARGET (    task    ,   0 );
+            Set_Task_TIMES  (    task    ,   0 );
+            Set_Task_WEP    (    task    ,   &Create_init_Wep() );
+            Set_Task_EXP    (    task    ,   0 );
+        }
+        /* Task Get function */
+        public fun Get_Rand_Task(account:&signer,task:&mut Task){
             let rand    = Get_Rand(account);
             let rand1   = *Vector::borrow(&rand,5);
             let rand2   = *Vector::borrow(&rand,6);
@@ -455,13 +497,7 @@ address 0x2{
             task.WEP = wep;   
             task.EXP = exp;      
         }
-        public fun Reset_Task(task:&mut Task){
-            task.TARGET  = 0;
-            task.TIMES   = 0;
-            Reset_Wep(&mut task.WEP);
-            task.RARITY   = 0;
-            task.EXP   = 0;
-        }
+
         public fun Get_Task_TARGET(task:&Task):u8{
             (*task).TARGET
         }
@@ -474,5 +510,96 @@ address 0x2{
         public fun Get_Task_EXP(task:&Task):u8{
             (*task).EXP
         }
+
+        /* Task Set function */
+        public fun Set_Task_Task(task1:&mut Task,task2:&Task){
+            Set_Task_TARGET (   task1   ,   Get_Task_TARGET(    task2   ));
+            Set_Task_TIMES  (   task1   ,   Get_Task_TIMES(    task2   ));
+            Set_Task_WEP    (   task1   ,   &Get_Task_WEP(    task2   ));
+            Set_Task_EXP    (   task1   ,   Get_Task_EXP(    task2   ));
+
+        }
+
+        public fun Set_Task_TARGET(task:&mut Task,target:u8){
+            task.TARGET     = target;
+        }
+        public fun Set_Task_TIMES(task:&mut Task,times:u8){
+            task.TIMES      = times;
+        }
+        public fun Set_Task_WEP(task:&mut Task,wep:&Wep){
+            Set_Wep_Wep     (   &mut  task.WEP    ,   wep );
+        }
+        public fun Set_Task_EXP(task:&mut Task,exp:u8){
+            task.EXP        = exp;
+        }
+        /* Task function  end*/
+
+        /* Rarity identification  function*/
+        public fun Check_Rarity(r:u8):u8{
+            return ((   r & 56 ) >> 3)
+        }
+        /* Rarity identification  function end*/
+        /* Position , Regional inspection  function */
+        public fun Check_Position   (p:u8):u8{
+            return ( p & 7 )
+        }
+        public fun Check_Regional   (r:u8):u8{
+            return (( r & 56 ) >> 3)
+        }
+        /* Position , Regional inspection function end*/
+        /*Game function*/
+        public fun  Game_init(account:&signer):Hero{
+            let hero = Get_Rand_Hero(account);
+            let task = Create_init_Task();
+            Get_Rand_Task(account,&mut task);
+            Set_Hero_TASK(  &mut hero , &task);
+            hero
+        }
+        public fun Game_Hero_move(hero:&mut Hero,position:u8,regional:u8){
+            let action = Get_Hero_ACT(  hero  );
+            let pos_old     = Get_Action_INIT(&action);
+            let init_time   = Get_Action_INIT_TIME(&action);
+            if(init_time != 0){
+                abort(ERR_MOVE_IS_MOVING)
+            };
+            if(Check_Position(pos_old) == position && Check_Regional(pos_old) == regional){
+                abort(ERR_MOVE_NEW_EQ_OLD)
+            };
+            if(Check_Regional(pos_old) ==  regional){
+                Set_Action_DES(&mut action  ,   position);
+                let now_time  = Timestamp::now_seconds();
+                let des_time = now_time + 5 * 60;
+                Set_Action_DES_TIME(&mut action,des_time);
+                Set_Action_INIT_TIME(&mut action,now_time);
+            };
+            Set_Hero_ACT(hero,&action);
+        }
+        public fun Game_Hero_upgrade(hero:&mut Hero){
+            let exp = Get_Hero_EXP(hero);
+            let level = Get_Hero_LEVEL(hero);
+            if(exp < 100){
+                abort(ERR_HERO_UPGRADE_EXP_TO_LESS)
+            };
+            if(level >= 10){
+                abort(ERR_HERO_UPGRADE_LEVEL_IS_MAX)
+            };
+            if(exp == 100){
+                Set_Hero_EXP    (   hero    ,   0           );
+                Set_Hero_LEVEL  ( hero      ,   level + 1   ); 
+            }else if(exp > 100 && exp < 200){
+                let exp_more = exp - 100;
+                Set_Hero_EXP    (   hero       ,   exp_more   );
+                Set_Hero_LEVEL  (   hero       ,   level + 1);
+            }else {
+                let exp_more = exp - 200;
+                if(level <= 9 ){
+                    Set_Hero_LEVEL  (   hero        ,   level + 1);
+                }else if(level < 9){
+                    Set_Hero_LEVEL  (   hero        ,   level + 2);
+                };
+                Set_Hero_EXP    (   hero    ,   exp_more);
+            }
+        }
+        /*Game function end */
     }
 }

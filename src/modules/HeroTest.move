@@ -8,7 +8,11 @@ address 0x2{
         // use 0x1::Account;
 
         const ERR_MOVE_NEW_EQ_OLD           :u64        = 1000;
+        
         const ERR_MOVE_IS_MOVING            :u64        = 1001;
+        const ERR_MOVE_IS_SLEEP            :u64        = 1002;
+        const ERR_MOVE_IS_FIGHT            :u64        = 1003;
+        const ERR_MOVE_IS_void              :u64        = 1004;
         const ERR_HERO_UPGRADE_EXP_TO_LESS  :u64        = 1101;
         const ERR_HERO_UPGRADE_LEVEL_IS_MAX :u64        = 1102;
         //Att: attribute
@@ -45,6 +49,7 @@ address 0x2{
             LEVEL   :u8,
             EXP     :u8,
             TIMES   :u8,
+            STATUS  :u8,
             ATT     :Att,
             WEP     :Wep,
             GFT     :Gift,
@@ -124,6 +129,7 @@ address 0x2{
                 LEVEL   :0,
                 EXP     :0,
                 TIMES   :0,
+                STATUS  :0,
                 ATT     :att,
                 WEP     :wep,
                 GFT     :gift,
@@ -170,6 +176,9 @@ address 0x2{
         public fun Get_Hero_TIMES(hero:&Hero):u8{
             *&hero.TIMES
         }
+        public fun Get_Hero_STATUS(hero:&Hero):u8{
+            *&hero.STATUS
+        }
         public fun Get_Hero_WEP(hero:&Hero):Wep{
             *&hero.WEP
         }
@@ -193,7 +202,9 @@ address 0x2{
         public fun Set_Hero_TIMES(hero:&mut Hero,times:u8){
             hero.TIMES = times;
         }
-
+        public fun Set_Hero_STATUS(hero:&mut Hero,status:u8){
+            hero.STATUS = status;
+        }
         public fun Set_Hero_ATT(hero:&mut Hero,att:&Att){
             Set_Att_Att     (   &mut hero.ATT   ,   att);
         }
@@ -338,7 +349,17 @@ address 0x2{
             Set_Wep_BRE (   wep1 ,   Get_Wep_BRE (   wep2    ));
             Set_Wep_BOT (   wep1 ,   Get_Wep_BOT (   wep2    ));
         }
-
+        public fun Set_Wep_Wep_withRarity(wep1:&mut Wep,wep2:&Wep){
+            if(Check_Rarity(Get_Wep_WEAP(wep2)) > Check_Rarity(Get_Wep_WEAP(wep1))) {
+                Set_Wep_WEAP(   wep1 ,   Get_Wep_WEAP(   wep2    ));
+            };
+            if(Check_Rarity(Get_Wep_BRE(wep2)) > Check_Rarity(Get_Wep_BRE(wep1))) {
+                Set_Wep_BRE(   wep1 ,   Get_Wep_BRE(   wep2    ));
+            };
+            if(Check_Rarity(Get_Wep_BOT(wep2)) > Check_Rarity(Get_Wep_BOT(wep1))) {
+                Set_Wep_BOT(   wep1 ,   Get_Wep_BOT(   wep2    ));
+            }; 
+        }
         public fun Set_Wep_WEAP(wep:&mut Wep,weap:u8){
             wep.WEAP    =   weap;
         }
@@ -449,28 +470,28 @@ address 0x2{
             let rand2   = *Vector::borrow(&rand,6);
             let rand3   = *Vector::borrow(&rand,7);
             let rand4   = *Vector::borrow(&rand,8);
-            let rand5   = *Vector::borrow(&rand,9);
+            // let rand5   = *Vector::borrow(&rand,9);
             let target  = ( rand1 % 5 ) + 1;
             let times   = ( rand2 % 3 ) + 1;
             let rarity  = ( rand3 % 5 ) + 1;
             let wep_t   = ( rand4 % 3 ) + 1;
             let wep     = if(wep_t == 1){
                             Wep {
-                                WEAP    : rarity << 3 | ( rand5 % 3 ) + 1 ,
+                                WEAP    : rarity << 3 | 2,//( rand5 % 3 ) + 1 ,
                                 BRE     : 0 ,
                                 BOT     : 0 ,
                             }
                           }else if(wep_t == 2){
                             Wep {
                                 WEAP    : 0 ,
-                                BRE     : rarity << 3 | ( rand5 % 3 ) + 1 ,
+                                BRE     : rarity << 3 | 2,//( rand5 % 3 ) + 1 ,
                                 BOT     : 0 ,
                             }
                           }else {
                             Wep {
                                 WEAP    : 0 ,
                                 BRE     : 0 ,
-                                BOT     : rarity << 3 | ( rand5 % 3 ) + 1 ,
+                                BOT     : rarity << 3 | 2,//( rand5 % 3 ) + 1 ,
                             }
                           };
             let exp     = if(rarity == 1){
@@ -558,9 +579,13 @@ address 0x2{
         public fun Game_Hero_move(hero:&mut Hero,position:u8,regional:u8){
             let action = Get_Hero_ACT(  hero  );
             let pos_old     = Get_Action_INIT(&action);
-            let init_time   = Get_Action_INIT_TIME(&action);
-            if(init_time != 0){
+            let status      = Get_Hero_STATUS(hero);
+            if(status == 1){
+                abort(ERR_MOVE_IS_SLEEP)
+            }else if(status == 2){
                 abort(ERR_MOVE_IS_MOVING)
+            }else if(status == 3){
+                abort(ERR_MOVE_IS_FIGHT)
             };
             if(Check_Position(pos_old) == position && Check_Regional(pos_old) == regional){
                 abort(ERR_MOVE_NEW_EQ_OLD)
@@ -573,6 +598,76 @@ address 0x2{
                 Set_Action_INIT_TIME(&mut action,now_time);
             };
             Set_Hero_ACT(hero,&action);
+            Set_Hero_STATUS(hero,3);
+        }
+        public fun Game_Hero_IsCan_move(hero:&Hero):bool{
+            let status = Get_Hero_STATUS(hero);
+            return status == 0
+        }
+        public fun Game_Hero_move_Arrive(hero:&mut Hero){
+            if(Game_Hero_move_IsArrive(hero)){
+                return
+            };
+            Set_Hero_STATUS(hero,0);
+        }
+        public fun Game_Hero_move_IsArrive(hero:&Hero):bool{
+            let status      = Get_Hero_STATUS(hero);
+            if(status == 0){
+                abort(ERR_MOVE_IS_void)
+            }else if(status == 1){
+                abort(ERR_MOVE_IS_SLEEP)
+            }else if(status == 2){
+                abort(ERR_MOVE_IS_MOVING)
+            }else if(status == 3){
+                abort(ERR_MOVE_IS_FIGHT)
+            };
+            let now_time    = Timestamp::now_seconds();
+            let action      =   Get_Hero_ACT(hero);
+            
+            return now_time >= Get_Action_DES_TIME(&action)
+            
+        }
+        public fun Game_Hero_task_Finish(hero:&mut Hero){
+            if(!Game_Hero_IsFinish_task(hero)){
+                return 
+            };
+            let task = Get_Hero_TASK(hero);
+            
+            if(!Game_Hero_EXP_IsMax(hero)){
+                let exp  = Get_Hero_EXP(hero) + Get_Task_EXP(&task);
+                Set_Hero_EXP(hero,exp);
+            };
+            let wep = Get_Hero_WEP(hero);
+            let task_wep = Get_Task_WEP(&task);
+            Set_Wep_Wep_withRarity(&mut wep,&task_wep);
+            Set_Hero_WEP(hero,&wep);
+            Reset_Task(&mut task);
+            Set_Hero_TASK(hero,&task);
+        }
+        public fun Game_Hero_task_Get(account:&signer,hero:&mut Hero){
+            if(Game_Hero_IsHave_task(hero)){
+                return
+            };
+            let task = Get_Hero_TASK(hero);
+            Get_Rand_Task(account,&mut task);
+            Set_Hero_TASK(hero,&task);
+        }
+        public fun Game_Hero_IsHave_task(hero:&Hero):bool{
+            let task = Get_Hero_TASK(hero);
+            if(Get_Task_TARGET(&task) == 0){
+                return false
+            };
+            return true
+        }
+        public fun Game_Hero_IsFinish_task(hero:&Hero):bool{
+            let task = Get_Hero_TASK(hero);
+            if (Game_Hero_IsHave_task(hero) == false){
+                return false
+            };
+            if(Get_Task_TIMES(&task) == 0){
+                return true
+            };
+            return false
         }
         public fun Game_Hero_upgrade(hero:&mut Hero){
             let exp = Get_Hero_EXP(hero);
@@ -600,6 +695,16 @@ address 0x2{
                 Set_Hero_EXP    (   hero    ,   exp_more);
             }
         }
+        public fun Game_Hero_IsCan_upgrade(hero:& Hero):bool{
+            return ( !Game_Hero_LEVEL_IsMax(hero) )&&  Game_Hero_EXP_IsMax(hero)
+        }
+        public fun Game_Hero_EXP_IsMax(hero:&Hero):bool{
+            return Get_Hero_EXP(hero) >= 100
+        }
+        public fun Game_Hero_LEVEL_IsMax(hero:&Hero):bool{
+            return Get_Hero_LEVEL(hero) >= 10
+        }
+
         /*Game function end */
     }
 }

@@ -132,18 +132,7 @@ address 0x2{
 
         }
         
-        public fun Set_Hero_LEVEL(hero:&mut Hero,level:u8){
-            hero.LEVEL = level;
-        }
-        public fun Set_Hero_EXP(hero:&mut Hero,exp:u8){
-            hero.EXP = exp;
-        }
-        public fun Set_Hero_TIMES(hero:&mut Hero,times:u8){
-            hero.TIMES = times;
-        }
-        public fun Set_Hero_ATT(hero:&mut Hero,att:&Att){
-            Set_Att_Att(&mut hero.ATT,att);
-        }
+        
 
 
         /* Hero function*/
@@ -171,15 +160,42 @@ address 0x2{
         public fun Get_Hero_ACT(hero:&Hero):Action{
             *&hero.ACT
         }
-        /* Hero function end*/
-        
-        /* Att function*/
-        public fun Set_Att_Att(att1:&mut Att,att2:&Att){
-            Set_Att_ATK ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_DEF ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_AGL ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_HP  ( att1,Get_Att_ATK  (   att2    )    );
+
+        public fun Set_Hero_LEVEL(hero:&mut Hero,level:u8){
+            hero.LEVEL = level;
         }
+        public fun Set_Hero_EXP(hero:&mut Hero,exp:u8){
+            hero.EXP   = exp;
+        }
+        
+        public fun Set_Hero_TIMES(hero:&mut Hero,times:u8){
+            hero.TIMES = times;
+        }
+
+        public fun Set_Hero_ATT(hero:&mut Hero,att:&Att){
+            Set_Att_Att(&mut hero.ATT,att);
+        }
+
+        public fun Set_Hero_WEP(hero:&mut Hero,wep:&Wep){
+            Set_Att_Att(&mut hero.WEP,att);
+        }
+
+        public fun Set_Hero_GFT(hero:&mut Hero,gift:&Gift){
+            hero.GFT
+        }
+        public fun Set_Hero_TASK(hero:&mut Hero,task:&Task){
+            *&hero.TASK
+        }
+        public fun Set_Hero_ACT(hero:&mut Hero,action:&Action){
+            *&hero.ACT
+        }
+
+        /* Hero function end*/
+
+        /* Att function*/
+        
+        /* Att Get function*/
+
         public fun Get_Att_ATK(att:&Att):u8{
             (*att).ATK
         }
@@ -192,6 +208,16 @@ address 0x2{
         public fun Get_Att_HP(att:&Att):u8{
             (*att).HP
         }
+
+        /* Att Set function*/
+
+        public fun Set_Att_Att(att1:&mut Att,att2:&Att){
+            Set_Att_ATK ( att1,Get_Att_ATK  (   att2    )    );
+            Set_Att_DEF ( att1,Get_Att_ATK  (   att2    )    );
+            Set_Att_AGL ( att1,Get_Att_ATK  (   att2    )    );
+            Set_Att_HP  ( att1,Get_Att_ATK  (   att2    )    );
+        }
+
 
         public fun Set_Att_ATK(att:&mut Att,atk:u8){
             att.ATK = atk;
@@ -207,6 +233,12 @@ address 0x2{
         }
         /* Att function end*/
 
+
+
+        /* Gift function */
+
+        /* Gift Get function */
+        
         public fun Get_Gift_ATK(gift:&Gift):u8{
             (*gift).ATK
         }
@@ -219,15 +251,40 @@ address 0x2{
         public fun Get_Gift_HP(gift:&Gift):u8{
             (*gift).HP
         }
+        /* Gift Set function */
+        public fun Set_Gift_Gift(gift1:&mut Gift,gift2:&Gift){
+            Set_Gift_ATK(   gift1   ,   Get_Gift_ATK(   gift2   )   );
+            Set_Gift_DEF(   gift1   ,   Get_Gift_DEF(   gift2   )   );
+            Set_Gift_AGL(   gift1   ,   Get_Gift_AGL(   gift2   )   );
+            Set_Gift_HP (   gift1   ,   Get_Gift_HP (   gift2   )   );
+        }
 
+        public fun Set_Gift_ATK(gift:&mut Gift,atk:u8){
+            gift.ATK = atk;
+        }
+        public fun Set_Gift_DEF(gift:&mut Gift,def:u8){
+            gift.DEF = def;
+        }
+        public fun Set_Gift_AGL(gift:&mut Gift,agl:u8){
+            gift.AGL = agl;
+        }
+        public fun Set_Gift_HP(gift:&mut Gift,hp:u8){
+            gift.HP = hp;
+        }
+        /* Gift function end*/
+        
+        /* Wep function */
         public fun Create_Wep():u8{
             0
         }
         public fun Reset_Wep(wep:&mut Wep){
-                wep.WEAP = 0;
-                wep.BRE  = 0;
-                wep.BOT  = 0;
+            Set_Wep_WEAP(   wep    ,   0);
+            Set_Wep_BRE (   wep    ,   0);
+            Set_Wep_BOT (   wep    ,   0);
         }
+
+
+        /* Wep Get function */
 
         public fun Get_Wep_WEAP(wep:&Wep):u8{
             (*wep).WEAP
@@ -238,6 +295,27 @@ address 0x2{
         public fun Get_Wep_BOT(wep:&Wep):u8{
             (*wep).BOT
         }
+
+        /* Wep Set function */
+        
+        public fun Set_Wep_Wep(wep1:&mut Wep,wep2:&Wep){
+            Set_Wep_WEAP(   Wep ,   Get_Wep_WEAP(   wep2    ));
+            Set_Wep_BRE (   Wep ,   Get_Wep_BRE (   wep2    ));
+            Set_Wep_BOT (   Wep ,   Get_Wep_BOT (   wep2    ));
+        }
+
+        public fun Set_Wep_WEAP(wep:&Wep,weap:u8){
+            wep.WEAP    =   weap;
+        }
+        public fun Set_Wep_BRE(wep:&Wep,bre:u8){
+            wep.BRE     =   bre;
+        }
+        public fun Set_Wep_BOT(wep:&Wep,bot:u8){
+            wep.BOT     =   bot;
+        }
+        /* Wep function end*/
+
+        /* Action function */
         public fun Create_init_Action():Action{
             let act = Action{
                 INIT        :1,
@@ -251,12 +329,13 @@ address 0x2{
             Set_Action(action,1,1,0,0);
         }
         public fun Set_Action(action:&mut Action,init:u8,des:u8,init_time:u64,des_time:u64){
-            action.INIT         = init;
-            action.DES          = des;
-            action.INIT_TIME    = init_time;
-            action.DES_TIME     = des_time;
+            Set_Action_INIT     (    Action  ,   init           );
+            Set_Action_DES      (    Action  ,   des            );
+            Set_Action_INIT_TIME(    Action  ,   init_time      );
+            Set_Action_DES_TIME (    Action  ,   des_time       );
         }
 
+        /* Action Get function */
 
         public fun Get_Action_INIT(action:&Action):u8{
             (*action).INIT
@@ -271,7 +350,22 @@ address 0x2{
             (*action).DES_TIME
         }
 
+        /* Action Set function */
 
+        public fun Set_Action_INIT(action:&mut Action,init:u8){
+            action.INIT     =   init;
+        }
+        public fun Set_Action_DES(action:&mut Action,des:u8){
+            action.DES      =   des;
+        }
+        public fun Set_Action_INIT_TIME(action:&mut Action,init_time:u64){
+            action.INIT_TIME    =   init_time;
+        }
+        public fun Set_Action_DES_TIME(action:&mut Action,des_time:u64){
+            action.DES_TIME     =   des_time;
+        }
+
+        /* Action function end*/
         public fun Get_Rand(account:&signer):vector<u8>{
             let parent_hash = Block::get_parent_hash();
             // let time        = Timestamp::now_seconds();

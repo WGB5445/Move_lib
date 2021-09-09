@@ -15,6 +15,15 @@ address 0x2{
         const ERR_MOVE_IS_void              :u64        = 1004;
         const ERR_HERO_UPGRADE_EXP_TO_LESS  :u64        = 1101;
         const ERR_HERO_UPGRADE_LEVEL_IS_MAX :u64        = 1102;
+
+        struct Monster has key,store,drop,copy{
+            KIND    :u8,
+            LEVEL   :u8,
+            EXP     :u8,
+            ATT     :Att,
+            GFT     :Gift
+        }
+
         //Att: attribute
         //ATK:Attack
         //DEF:Defense
@@ -153,7 +162,106 @@ address 0x2{
         }
         
         
+        /*Monster function*/
+        public fun Get_Rand_Monster(account:&signer):Monster{
+            let rand = Get_Rand(account);
+            let rand1 = *Vector::borrow(&rand,10);
+            let rand2 = *Vector::borrow(&rand,11);
+            let rand3 = *Vector::borrow(&rand,12);
+            let rand4 = *Vector::borrow(&rand,13);
+            let rand5 = *Vector::borrow(&rand,14);
+            let kind = rand1 % 5 + 1;
+            let att = if(kind = 1){
+                            Att{
+                                ATK     :2,
+                                DEF     :2,
+                                AGL     :20,
+                                HP      :5,
+                            }
+                        }else if(kind == 2){
+                            Att{
+                                ATK     :12,
+                                DEF     :7,
+                                AGL     :7,
+                                HP      :15,
+                            }
+                        }else if(kind == 3){
+                            Att{
+                                ATK     :13,
+                                DEF     :10,
+                                AGL     :5,
+                                HP      :16,
+                            }
+                        }else if(kind == 4){
+                            Att{
+                                ATK     :12,
+                                DEF     :10,
+                                AGL     :11,
+                                HP      :8,
+                            }
+                        }else {
+                            Att{
+                                ATK     :12,
+                                DEF     :10,
+                                AGL     :11,
+                                HP      :8,
+                            }
+                        };
+            let gift = Gift{
+                ATK     :(rand2%5 ) + 1,
+                DEF     :(rand3%5 ) + 1,
+                AGL     :(rand4%5 ) + 1,
+                HP      :(rand5%5 ) + 1,
+            };
+            let monster = Monster{
+                KIND    :kind,
+                LEVEL   :0,
+                EXP     :10,
+                ATT     :att,
+                GFT     :gift
+            }
+            monster
+        
+        }
 
+        public fun Reset_Monster(monster:&mut Monster){
+                Set_Monster_KIND    ( monster    , 0);
+                Set_Monster_LEVEL  ( monster    , 0);
+                Set_Monster_EXP    ( monster    , 10);
+        }
+
+        public fun Get_Monster_KIND(monster:&Monster):u8{
+            (*monster).KIND
+        }
+        public fun Get_Monster_LEVEL(monster:&Monster):u8{
+            (*monster).LEVEL
+        }
+        public fun Get_Monster_EXP(monster:&Monster):u8{
+            (*monster).EXP
+        }
+        public fun Get_Monster_ATT(monster:&Monster):Att{
+            *&monster.ATT
+        }
+        public fun Get_Monster_GFT(monster:&Monster):Gift{
+            *&monster.GFT
+        }
+
+         public fun Set_Monster_KIND(monster:&mut Monster,kind:u8){
+            monster.KIND = kind;
+        }
+        public fun Set_Monster_LEVEL(monster:&mut Monster,level:u8){
+            monster.LEVEL = level;
+        }
+        public fun Set_Monster_EXP(monster:&mut Monster,exp:u8){
+            monster.EXP  = exp;
+        }
+        public fun Set_Monster_ATT(monster:&mut Monster,att:&Att){
+            Set_Att_Att(&mut monster.ATT,att);
+        }
+        public fun Set_Monster_GFT(monster:&mut Monster,gift:&Gift){
+            Set_Gift_Gift(&mut monster.GFT,gift);
+        }
+        /*Monster function end */
 
         /* Hero function*/
         public fun Reset_Hero(hero:&mut Hero){

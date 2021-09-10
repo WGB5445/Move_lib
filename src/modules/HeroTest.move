@@ -64,6 +64,7 @@ address 0x2{
             GFT     :Gift,
             TASK    :Task,
             ACT     :Action,
+            MSTR    :Monster
         }
 
         struct Task has key,store,drop,copy{
@@ -134,6 +135,24 @@ address 0x2{
                 DES_TIME    :0
             };
 
+            let monster = Monster{
+                KIND    :0,
+                LEVEL   :0,
+                EXP     :10,
+                ATT     :Att{
+                            ATK     :0,
+                            DEF     :0,
+                            AGL     :0,
+                            HP      :0,
+                        },
+                GFT     :Gift{
+                            ATK     :0,
+                            DEF     :0,
+                            AGL     :0,
+                            HP      :0,
+                        }
+            };
+
             let hero = Hero{
                 LEVEL   :0,
                 EXP     :0,
@@ -144,6 +163,7 @@ address 0x2{
                 GFT     :gift,
                 TASK    :task,
                 ACT     :act,
+                MSTR    :monster,
             };
             hero
         }
@@ -221,9 +241,66 @@ address 0x2{
                 GFT     :gift
             };
             monster
-        
         }
-
+        public fun Get_Rand_Monster_by_hero(account:&signer,hero:&Hero):Monster{
+            let rand = Get_Rand(account);
+            // let rand1 = *Vector::borrow(&rand,10);
+            let rand2 = *Vector::borrow(&rand,11);
+            let rand3 = *Vector::borrow(&rand,12);
+            let rand4 = *Vector::borrow(&rand,13);
+            let rand5 = *Vector::borrow(&rand,14);
+            let kind = Get_Action_INIT(& Get_Hero_ACT(hero));
+            let att = if(kind == 2){
+                            Att{
+                                ATK     :2,
+                                DEF     :2,
+                                AGL     :20,
+                                HP      :5,
+                            }
+                        }else if(kind == 3){
+                            Att{
+                                ATK     :12,
+                                DEF     :7,
+                                AGL     :7,
+                                HP      :15,
+                            }
+                        }else if(kind == 4){
+                            Att{
+                                ATK     :13,
+                                DEF     :10,
+                                AGL     :5,
+                                HP      :16,
+                            }
+                        }else if(kind == 5){
+                            Att{
+                                ATK     :12,
+                                DEF     :10,
+                                AGL     :11,
+                                HP      :8,
+                            }
+                        }else {
+                            Att{
+                                ATK     :12,
+                                DEF     :10,
+                                AGL     :11,
+                                HP      :8,
+                            }
+                        };
+            let gift = Gift{
+                ATK     :(rand2%5 ) + 1,
+                DEF     :(rand3%5 ) + 1,
+                AGL     :(rand4%5 ) + 1,
+                HP      :(rand5%5 ) + 1,
+            };
+            let monster = Monster{
+                KIND    :kind - 1,
+                LEVEL   :Get_Hero_LEVEL(hero),
+                EXP     :10,
+                ATT     :att,
+                GFT     :gift
+            };
+            monster
+        }
         public fun Reset_Monster(monster:&mut Monster){
                 Set_Monster_KIND    ( monster    , 0);
                 Set_Monster_LEVEL  ( monster    , 0);
@@ -246,6 +323,14 @@ address 0x2{
             *&monster.GFT
         }
 
+
+        public fun Set_Monster_Monster(monster1:&mut Monster,monster2:&Monster){
+            Set_Monster_KIND(monster1,Get_Monster_KIND(monster2));
+            Set_Monster_LEVEL(monster1,Get_Monster_LEVEL(monster2));
+            Set_Monster_EXP(monster1,Get_Monster_EXP(monster2));
+            Set_Monster_ATT(monster1,&Get_Monster_ATT(monster2));
+            Set_Monster_GFT(monster1,&Get_Monster_GFT(monster2));
+        }
          public fun Set_Monster_KIND(monster:&mut Monster,kind:u8){
             monster.KIND = kind;
         }
@@ -299,6 +384,9 @@ address 0x2{
         public fun Get_Hero_ACT(hero:&Hero):Action{
             *&hero.ACT
         }
+        public fun Get_Hero_MSTR(hero:&Hero):Monster{
+            *&hero.MSTR
+        }
 
         public fun Set_Hero_LEVEL(hero:&mut Hero,level:u8){
             hero.LEVEL = level;
@@ -330,6 +418,9 @@ address 0x2{
         public fun Set_Hero_ACT(hero:&mut Hero,action:&Action){
             Set_Action_Action(  &mut hero.ACT   ,   action);
         }
+        public fun Set_Hero_MSTR(hero:&mut Hero,monster:&Monster){
+            Set_Monster_Monster(  &mut hero.MSTR   ,   monster);
+        }
 
         /* Hero function end*/
 
@@ -354,9 +445,9 @@ address 0x2{
 
         public fun Set_Att_Att(att1:&mut Att,att2:&Att){
             Set_Att_ATK ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_DEF ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_AGL ( att1,Get_Att_ATK  (   att2    )    );
-            Set_Att_HP  ( att1,Get_Att_ATK  (   att2    )    );
+            Set_Att_DEF ( att1,Get_Att_DEF  (   att2    )    );
+            Set_Att_AGL ( att1,Get_Att_AGL  (   att2    )    );
+            Set_Att_HP  ( att1,Get_Att_HP  (   att2    )    );
         }
 
 
@@ -692,6 +783,44 @@ address 0x2{
             Set_Hero_TASK(  &mut hero , &task);
             hero
         }
+        public fun Game_Hero_Status_machine(hero:&mut Hero){
+            let status = Get_Hero_STATUS(hero);
+            if(status == 0){
+                ();
+            }else if(status == 1){
+                ();
+            }else if(status == 2){
+                Game_Hero_move_Arrive(hero);
+            }else if(status == 3){
+                ();
+            };
+        }
+        public fun Game_Hero_find_Monster(account:&signer,hero:&mut Hero){
+            if(Game_Hero_IsCan_findMonster(hero)){
+                let monster = Get_Rand_Monster_by_hero(account,hero);
+                Set_Hero_MSTR(hero,&monster);
+                Set_Hero_STATUS(hero,3);
+            }else {
+                ()
+            };
+        }
+        public fun Game_Hero_IsCan_findMonster(hero:&Hero):bool{
+            let status =   Get_Hero_STATUS(hero);
+            if(status != 0){
+                return false
+            };
+            
+            let action =   Get_Hero_ACT(hero);
+            let position = Check_Position(Get_Action_INIT(&action));
+            let regional = Check_Regional(Get_Action_INIT(&action));
+            if(regional != 0){
+                return false
+            };
+            if (position != 0 && position != 1 && position <= 6) {
+                return true
+            };
+            return false
+        }
         public fun Game_Hero_move(hero:&mut Hero,position:u8,regional:u8){
             let action = Get_Hero_ACT(  hero  );
             let pos_old     = Get_Action_INIT(&action);
@@ -724,16 +853,20 @@ address 0x2{
             if(!Game_Hero_move_IsArrive(hero)){
                 return
             };
+            let action = Get_Hero_ACT(hero);
+            let des     = Get_Action_DES(&action);
+            Set_Action_INIT(&mut action,des);
+            Set_Hero_ACT(hero,&action);
             Set_Hero_STATUS(hero,0);
         }
         public fun Game_Hero_move_IsArrive(hero:&Hero):bool{
             let status      = Get_Hero_STATUS(hero);
             if(status == 0){
-                abort(ERR_MOVE_IS_void)
+                return false
             }else if(status == 1){
-                abort(ERR_MOVE_IS_SLEEP)
+                return false
             }else if(status == 3){
-                abort(ERR_MOVE_IS_FIGHT)
+                return false
             };
             let now_time    = Get_Now_Times(602);
             let action      =   Get_Hero_ACT(hero);

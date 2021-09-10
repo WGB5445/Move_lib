@@ -278,7 +278,7 @@ address 0x2{
                             Att{
                                 ATK     :2,
                                 DEF     :2,
-                                AGL     :20,
+                                AGL     :10,
                                 HP      :5,
                             }
                         }else if(kind == 3){
@@ -825,6 +825,7 @@ address 0x2{
         }
 
         /*Game function*/
+
         public fun  Game_init(account:&signer):Hero{
             let hero = Get_Rand_Hero(account);
             let task = Create_init_Task();
@@ -832,7 +833,9 @@ address 0x2{
             Set_Hero_TASK(  &mut hero , &task);
             hero
         }
-        public fun Game_Hero_Status_machine(hero:&mut Hero){
+        public fun Game_Hero_Status_machine(account:&signer) acquires Hero{
+            let account_address =  Signer::address_of(account);
+            let hero = borrow_global_mut<Hero>(account_address);
             let status = Get_Hero_STATUS(hero);
             if(status == 0){
                 ();
@@ -945,14 +948,14 @@ address 0x2{
             let pos_old     = Get_Action_INIT(&action);
             let status      = Get_Hero_STATUS(hero);
             if(status == 1){
-                abort(ERR_MOVE_IS_SLEEP)
+                return 
             }else if(status == 2){
-                abort(ERR_MOVE_IS_MOVING)
+                return
             }else if(status == 3){
-                abort(ERR_MOVE_IS_FIGHT)
+                return
             };
             if(Check_Position(pos_old) == position && Check_Regional(pos_old) == regional){
-                abort(ERR_MOVE_NEW_EQ_OLD)
+                return
             };
             if(Check_Regional(pos_old) ==  regional){
                 Set_Action_DES(&mut action  ,   position);
@@ -1070,11 +1073,13 @@ address 0x2{
         public fun Game_Hero_LEVEL_IsMax(hero:&Hero):bool{
             return Get_Hero_LEVEL(hero) >= 10
         }
-
+        public fun Game_IsInit(account:&signer):bool{
+            let account_address =  Signer::address_of(account);
+            return exists<Hero>(account_address)
+        }
         public (script) fun Game_Init(account:signer)acquires Hero{
-            let account_address =  Signer::address_of(&account);
-            
-            if(exists<Hero>(account_address)){
+            let account_address =  Signer::address_of(&account);           
+            if(Game_IsInit(&account)){
                 let Hero {   
                         LEVEL   :_,
                         EXP     :_,
@@ -1091,7 +1096,30 @@ address 0x2{
             let hero = Game_init(&account);
             move_to(&account,hero);
         }
-
+        public (script) fun Game_move(account:signer,position:u8,regional:u8)acquires Hero{
+            if(Game_IsInit(&account)){
+                Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_move(hero,position,regional);
+            }
+        }
+        public (script) fun Game_Find_Monster(account:signer)acquires Hero{
+            if(Game_IsInit(&account)){
+                    Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_find_Monster(&account,hero);
+            }
+        }
+        public (script) fun Game_Fight_Monster(account:signer)acquires Hero{
+            if(Game_IsInit(&account)){
+                    Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_Fight_Monster(hero);
+            }
+        }
         /*Game function end */
     }
     

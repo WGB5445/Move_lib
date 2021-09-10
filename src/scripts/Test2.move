@@ -3,19 +3,13 @@ script {
     use 0x2::STCHeroAdventure;
     //move publish
     //move run src/scripts/test.move --signers 0x2
-    fun main(account: signer) {
-        let hero = STCHeroAdventure::Game_init(&account);
-
-        // Debug::print(&STCHeroAdventure::Check_Rarity(STCHeroAdventure::Get_Wep_WEAP(&STCHeroAdventure::Get_Task_WEP(&task))));
-        Debug::print(&hero);
-        Debug::print(&STCHeroAdventure::Game_Hero_IsCan_move(&hero)) ;
-        STCHeroAdventure::Game_Hero_move(&mut hero,2,0);
-        Debug::print(&hero);
-        Debug::print(&STCHeroAdventure::Game_Hero_IsCan_move(&hero)) ;
-        
-        Debug::print(&STCHeroAdventure::Game_Hero_move_IsArrive(&hero)) ;
-        STCHeroAdventure::Game_Hero_move_Arrive(&mut hero);
-        Debug::print(&hero);
-       
+    
+    fun main(addr:address) {
+        // STCHeroAdventure::Game_Init(account);
+        //STCHeroAdventure::Game_move(account,4,0);
+        //   STCHeroAdventure::Game_Find_Monster(account);
+        // STCHeroAdventure::Game_Fight_Monster(account);
+        Debug::print (&STCHeroAdventure::Game_Return_Hero(addr));
     }
+   
 }

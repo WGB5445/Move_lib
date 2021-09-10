@@ -1,3 +1,14 @@
+/************************************************
+*           STCHeroAdventure V0.1 
+*                                   --WGB
+*                                   --https://wgb5445.github.io/
+*                                   --wgb98@foxmail.com
+*
+*       The story of a hero fighting a monster to upgrade
+*
+*
+************************************************/
+
 address 0x2{
     module STCHeroAdventure{
         use 0x1::Signer;
@@ -22,6 +33,173 @@ address 0x2{
 
 
 /************************/
+
+
+/***************************************************************/
+    /*Game Script API function */
+        public (script) fun Game_Init(account:signer)acquires Hero{
+            let account_address =  Signer::address_of(&account);           
+            if(Game_IsInit(&account)){
+                let Hero {   
+                        LEVEL   :_,
+                        EXP     :_,
+                        TIMES   :_,
+                        STATUS  :_,
+                        ATT     :_,
+                        WEP     :_,
+                        GFT     :_,
+                        TASK    :_,
+                        ACT     :_,
+                        MSTR    :_,
+                 } = move_from(account_address);
+            };
+            let hero = Game_init(&account);
+            move_to(&account,hero);
+        }
+        public (script) fun Game_move(account:signer,position:u8,regional:u8)acquires Hero{
+            if(Game_IsInit(&account)){
+                Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_move(hero,position,regional);
+            }
+        }
+        public (script) fun Game_Find_Monster(account:signer)acquires Hero{
+            if(Game_IsInit(&account)){
+                    Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_find_Monster(&account,hero);
+            }
+        }
+        public (script) fun Game_Fight_Monster(account:signer)acquires Hero{
+            if(Game_IsInit(&account)){
+                    Game_Hero_Status_machine(&account);
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    Game_Hero_Fight_Monster(&account,hero);
+            }
+        }
+        public (script) fun Game_Hero_Restart(account:signer)acquires Hero{
+            if(Game_IsInit(&account)){
+                    let account_address =  Signer::address_of(&account);
+                    let hero = borrow_global_mut<Hero>(account_address);
+                    if(Game_Hero_LEVEL_IsMax(hero)){
+                        Reset_Hero(hero);
+                        Game_Hero_task_Get(&account,hero);
+                    }
+            }
+        }
+        /*
+            LEVEL   :u8,
+            EXP     :u8,
+            TIMES   :u8,
+            STATUS  :u8,
+            ATT     :Att,
+            WEP     :Wep,
+            GFT     :Gift,
+            TASK    :Task,
+            ACT     :Action,
+            MSTR    :Monster
+        */
+        public (script) fun Game_Return_Hero(addr:address):Hero acquires Hero{
+            *borrow_global<Hero>(addr)
+        }
+        public (script) fun Game_Return_Hero_Level(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_LEVEL(hero)
+        }
+        public (script) fun Game_Return_Hero_Exp(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_EXP(hero)
+        }
+        public (script) fun Game_Return_Hero_Times(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_TIMES(hero)
+        }
+        public (script) fun Game_Return_Hero_Status(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_STATUS(hero)
+        }
+        public (script) fun Game_Return_Hero_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_ATT(hero)
+        }
+        public (script) fun Game_Return_Hero_Fight_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Hero_Att_compute(hero)
+        }
+        public (script) fun Game_Return_Hero_Wep(addr:address):Wep acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_WEP(hero)
+        }
+        public (script) fun Game_Return_Hero_Gift(addr:address):Gift acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_GFT(hero)
+        }
+        public (script) fun Game_Return_Hero_Task(addr:address):Task acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_TASK(hero)
+        }
+        
+        public (script) fun Game_Return_Hero_Action(addr:address):Action acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_ACT(hero)
+        }
+        
+        public (script) fun Game_Return_Hero_Monster(addr:address):Monster acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_MSTR(hero)
+        }
+        public (script) fun Game_Return_Wep_Rarity(i:u8):u8 {
+            Check_Rarity(i)
+        }
+
+        /*
+            KIND    :u8,
+            LEVEL   :u8,
+            EXP     :u8,
+            ATT     :Att,
+            GFT     :Gift
+        */
+
+         public (script) fun Game_Return_Monster(addr:address):Monster acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            Get_Hero_MSTR(hero)
+        }
+        public (script) fun Game_Return_Monster_Kind(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Get_Monster_KIND(&monster)
+        }
+        public (script) fun Game_Return_Monster_Level(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Get_Monster_LEVEL(&monster)
+        }
+        public (script) fun Game_Return_Monster_Exp(addr:address):u8 acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Get_Monster_EXP(&monster)
+        }
+        public (script) fun Game_Return_Monster_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Get_Monster_ATT(&monster)
+        }
+        public (script) fun Game_Return_Monster_Fight_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Monster_Att_compute(&monster)
+        }
+        public (script) fun Game_Return_Monster_Gift(addr:address):Gift acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let monster =  Get_Hero_MSTR(hero);
+            Get_Monster_GFT(&monster)
+        }
+        /*Game Script function end*/
+
+/**************************************************************/
         struct Monster has key,store,drop,copy{
             KIND    :u8,
             LEVEL   :u8,
@@ -1139,169 +1317,7 @@ address 0x2{
         }
         
         /*Game function end */
-        /*Game Script function */
-        public (script) fun Game_Init(account:signer)acquires Hero{
-            let account_address =  Signer::address_of(&account);           
-            if(Game_IsInit(&account)){
-                let Hero {   
-                        LEVEL   :_,
-                        EXP     :_,
-                        TIMES   :_,
-                        STATUS  :_,
-                        ATT     :_,
-                        WEP     :_,
-                        GFT     :_,
-                        TASK    :_,
-                        ACT     :_,
-                        MSTR    :_,
-                 } = move_from(account_address);
-            };
-            let hero = Game_init(&account);
-            move_to(&account,hero);
-        }
-        public (script) fun Game_move(account:signer,position:u8,regional:u8)acquires Hero{
-            if(Game_IsInit(&account)){
-                Game_Hero_Status_machine(&account);
-                    let account_address =  Signer::address_of(&account);
-                    let hero = borrow_global_mut<Hero>(account_address);
-                    Game_Hero_move(hero,position,regional);
-            }
-        }
-        public (script) fun Game_Find_Monster(account:signer)acquires Hero{
-            if(Game_IsInit(&account)){
-                    Game_Hero_Status_machine(&account);
-                    let account_address =  Signer::address_of(&account);
-                    let hero = borrow_global_mut<Hero>(account_address);
-                    Game_Hero_find_Monster(&account,hero);
-            }
-        }
-        public (script) fun Game_Fight_Monster(account:signer)acquires Hero{
-            if(Game_IsInit(&account)){
-                    Game_Hero_Status_machine(&account);
-                    let account_address =  Signer::address_of(&account);
-                    let hero = borrow_global_mut<Hero>(account_address);
-                    Game_Hero_Fight_Monster(&account,hero);
-            }
-        }
-        public (script) fun Game_Hero_Restart(account:signer)acquires Hero{
-            if(Game_IsInit(&account)){
-                    let account_address =  Signer::address_of(&account);
-                    let hero = borrow_global_mut<Hero>(account_address);
-                    if(Game_Hero_LEVEL_IsMax(hero)){
-                        Reset_Hero(hero);
-                        Game_Hero_task_Get(&account,hero);
-                    }
-            }
-        }
-        /*
-            LEVEL   :u8,
-            EXP     :u8,
-            TIMES   :u8,
-            STATUS  :u8,
-            ATT     :Att,
-            WEP     :Wep,
-            GFT     :Gift,
-            TASK    :Task,
-            ACT     :Action,
-            MSTR    :Monster
-        */
-        public (script) fun Game_Return_Hero(addr:address):Hero acquires Hero{
-            *borrow_global<Hero>(addr)
-        }
-        public (script) fun Game_Return_Hero_Level(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_LEVEL(hero)
-        }
-        public (script) fun Game_Return_Hero_Exp(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_EXP(hero)
-        }
-        public (script) fun Game_Return_Hero_Times(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_TIMES(hero)
-        }
-        public (script) fun Game_Return_Hero_Status(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_STATUS(hero)
-        }
-        public (script) fun Game_Return_Hero_Att(addr:address):Att acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_ATT(hero)
-        }
-        public (script) fun Game_Return_Hero_Fight_Att(addr:address):Att acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Hero_Att_compute(hero)
-        }
-        public (script) fun Game_Return_Hero_Wep(addr:address):Wep acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_WEP(hero)
-        }
-        public (script) fun Game_Return_Hero_Gift(addr:address):Gift acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_GFT(hero)
-        }
-        public (script) fun Game_Return_Hero_Task(addr:address):Task acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_TASK(hero)
-        }
         
-        public (script) fun Game_Return_Hero_Action(addr:address):Action acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_ACT(hero)
-        }
-        
-        public (script) fun Game_Return_Hero_Monster(addr:address):Monster acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_MSTR(hero)
-        }
-        public (script) fun Game_Return_Wep_Rarity(i:u8):u8 {
-            Check_Rarity(i)
-        }
-
-        /*
-            KIND    :u8,
-            LEVEL   :u8,
-            EXP     :u8,
-            ATT     :Att,
-            GFT     :Gift
-        */
-
-         public (script) fun Game_Return_Monster(addr:address):Monster acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            Get_Hero_MSTR(hero)
-        }
-        public (script) fun Game_Return_Monster_Kind(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Get_Monster_KIND(&monster)
-        }
-        public (script) fun Game_Return_Monster_Level(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Get_Monster_LEVEL(&monster)
-        }
-        public (script) fun Game_Return_Monster_Exp(addr:address):u8 acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Get_Monster_EXP(&monster)
-        }
-        public (script) fun Game_Return_Monster_Att(addr:address):Att acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Get_Monster_ATT(&monster)
-        }
-        public (script) fun Game_Return_Monster_Fight_Att(addr:address):Att acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Monster_Att_compute(&monster)
-        }
-        public (script) fun Game_Return_Monster_Gift(addr:address):Gift acquires Hero{
-            let hero = borrow_global<Hero>(addr);
-            let monster =  Get_Hero_MSTR(hero);
-            Get_Monster_GFT(&monster)
-        }
-        /*Game Script function end*/
-
     }
     
 }

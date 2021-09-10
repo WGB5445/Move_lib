@@ -1122,6 +1122,9 @@ address 0x2{
             let account_address =  Signer::address_of(account);
             return exists<Hero>(account_address)
         }
+        
+        /*Game function end */
+        /*Game Script function */
         public (script) fun Game_Init(account:signer)acquires Hero{
             let account_address =  Signer::address_of(&account);           
             if(Game_IsInit(&account)){
@@ -1165,7 +1168,32 @@ address 0x2{
                     Game_Hero_Fight_Monster(&account,hero);
             }
         }
-        /*Game function end */
+
+        public (script) fun Game_Return_Hero(addr:address):Hero acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            *hero
+        }
+        public (script) fun Game_Return_Hero_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let att  = Get_Hero_ATT(hero);
+            att
+        }
+        public (script) fun Game_Return_Hero_Fight_Att(addr:address):Att acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let att  = Hero_Att_compute(hero);
+            att
+        }
+        public (script) fun Game_Return_Hero_Wep(addr:address):Wep acquires Hero{
+            let hero = borrow_global<Hero>(addr);
+            let wep  = Get_Hero_WEP(hero);
+            wep
+        }
+        public (script) fun Game_Return_Wep_Rarity(i:u8):u8 {
+            Check_Rarity(i)
+        }
+        
+        /*Game Script function end*/
+
     }
     
 }

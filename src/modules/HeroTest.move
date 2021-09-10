@@ -1,6 +1,6 @@
 address 0x2{
     module STCHeroAdventure{
-        // use 0x1::Signer;
+        use 0x1::Signer;
         use 0x1::Vector;
         // use 0x1::Block;
         use 0x1::Timestamp;
@@ -183,6 +183,30 @@ address 0x2{
         
         
         /*Monster function*/
+
+        public fun Monster_Att_compute(monster:&Monster):Att{
+            let att = Get_Monster_ATT(monster);
+            let gift = Get_Monster_GFT(monster);
+            let level = Get_Monster_LEVEL(monster);
+            /*              ATK     :0,
+                            DEF     :0,
+                            AGL     :0,
+                            HP      :0,*/
+            let atk = Get_Att_ATK(&att) + Get_Gift_ATK(&gift) *  level;
+            let def = Get_Att_DEF(&att) + Get_Gift_DEF(&gift) *  level;
+            let agl = Get_Att_AGL(&att) + Get_Gift_AGL(&gift) *  level;
+            let hp  = Get_Att_HP(&att) + Get_Gift_HP(&gift) *  level;
+            
+            Set_Att_HP(&mut att,hp);
+            Set_Att_ATK(&mut att,atk);
+            Set_Att_DEF(&mut att,def);
+            Set_Att_AGL(&mut att,agl);
+
+            return att
+        }
+
+
+
         public fun Get_Rand_Monster(account:&signer):Monster{
             let rand = Get_Rand(account);
             let rand1 = *Vector::borrow(&rand,10);
@@ -349,6 +373,31 @@ address 0x2{
         /*Monster function end */
 
         /* Hero function*/
+
+         public fun Hero_Att_compute(hero:&Hero):Att{
+            let att = Get_Hero_ATT(hero);
+            let gift = Get_Hero_GFT(hero);
+            let level = Get_Hero_LEVEL(hero);
+            /*              ATK     :0,
+                            DEF     :0,
+                            AGL     :0,
+                            HP      :0,*/
+            let atk = Get_Att_ATK(&att) + Get_Gift_ATK(&gift) *  level;
+            let def = Get_Att_DEF(&att) + Get_Gift_DEF(&gift) *  level;
+            let agl = Get_Att_AGL(&att) + Get_Gift_AGL(&gift) *  level;
+            let hp  = Get_Att_HP(&att) + Get_Gift_HP(&gift) *  level;
+            
+            Set_Att_HP(&mut att,hp);
+            Set_Att_ATK(&mut att,atk);
+            Set_Att_DEF(&mut att,def);
+            Set_Att_AGL(&mut att,agl);
+
+            return att
+        }
+
+
+
+
         public fun Reset_Hero(hero:&mut Hero){
                 Set_Hero_LEVEL  ( hero    , 0);
                 Set_Hero_EXP    ( hero    , 0);
@@ -804,6 +853,76 @@ address 0x2{
                 ()
             };
         }
+        public fun Game_Hero_Fight_Monster(hero:&mut Hero){
+            if(Get_Hero_STATUS(hero) != 3){
+                return  
+            };
+            
+            let hero_att = Hero_Att_compute(hero);
+        
+            let monster = Get_Hero_MSTR(hero);
+            let monster_att = Monster_Att_compute(&monster);
+            let res = Game_Hero_Fight_Monster_compute(&hero_att,&monster_att);
+            if (res){
+                Set_Hero_STATUS(hero,0);
+               
+                if(!Game_Hero_EXP_IsMax(hero)){
+                    let exp = Get_Hero_EXP(hero);
+                    
+                    Set_Hero_EXP(hero,(exp + Get_Monster_EXP(&monster)));
+                    if(Game_Hero_IsCan_upgrade(hero)){
+                        Game_Hero_upgrade(hero);
+                    };
+                };
+                if(Game_Hero_IsHave_task(hero)){
+                    let task = Get_Hero_TASK(hero);
+                    if(Get_Task_TARGET(&task) == Get_Monster_KIND(&monster)){
+                        let task_times = Get_Task_TIMES(&task);
+                        Set_Task_TIMES(&mut task, task_times);
+                        if(Game_Hero_IsFinish_task(hero)){
+                            Game_Hero_task_Finish(hero);
+                        }
+                    };
+                };
+
+                Reset_Monster(&mut monster);
+                Set_Hero_MSTR(hero,&monster);
+            }else{
+                Set_Hero_STATUS(hero,0);
+                Reset_Monster(&mut monster);
+                Set_Hero_MSTR(hero,&monster);
+            };
+            
+        }
+        public fun Game_Hero_Fight_Monster_compute(att1:&Att,att2:&Att):bool{
+            /*              ATK     :0,
+                            DEF     :0,
+                            AGL     :0,
+                            HP      :0,*/
+            let att1_atk = Get_Att_ATK(att1) * 2;
+            let att1_def = Get_Att_DEF(att1) * 2;
+            let att1_agl = Get_Att_AGL(att1) * 1;
+            let att1_hp  = Get_Att_HP(att1)  * 1;
+
+            let att2_atk = Get_Att_ATK(att2) * 2;
+            let att2_def = Get_Att_DEF(att2) * 1;
+            let att2_agl = Get_Att_AGL(att2) * 1;
+            let att2_hp  = Get_Att_HP(att2)  * 1;
+
+            if(att2_atk >= (att1_def + att1_agl) ){
+                let _hp =   att2_atk - (att1_def + att1_agl);
+                if(_hp >= att1_hp){
+                    return false
+                };
+            };
+            if(att1_atk >= (att2_def + att2_agl) ){
+                let _hp = att1_atk - (att2_def + att2_agl);
+                if(_hp >= att2_hp ){
+                    return true
+                };
+            };
+            return false
+        }
         public fun Game_Hero_IsCan_findMonster(hero:&Hero):bool{
             let status =   Get_Hero_STATUS(hero);
             if(status != 0){
@@ -952,6 +1071,28 @@ address 0x2{
             return Get_Hero_LEVEL(hero) >= 10
         }
 
+        public (script) fun Game_Init(account:signer)acquires Hero{
+            let account_address =  Signer::address_of(&account);
+            
+            if(exists<Hero>(account_address)){
+                let Hero {   
+                        LEVEL   :_,
+                        EXP     :_,
+                        TIMES   :_,
+                        STATUS  :_,
+                        ATT     :_,
+                        WEP     :_,
+                        GFT     :_,
+                        TASK    :_,
+                        ACT     :_,
+                        MSTR    :_,
+                 } = move_from(account_address);
+            };
+            let hero = Game_init(&account);
+            move_to(&account,hero);
+        }
+
         /*Game function end */
     }
+    
 }

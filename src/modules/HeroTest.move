@@ -283,28 +283,28 @@ address 0x2{
                             }
                         }else if(kind == 3){
                             Att{
-                                ATK     :12,
+                                ATK     :8,
                                 DEF     :7,
                                 AGL     :7,
-                                HP      :15,
+                                HP      :5,
                             }
                         }else if(kind == 4){
                             Att{
-                                ATK     :13,
+                                ATK     :7,
                                 DEF     :10,
                                 AGL     :5,
-                                HP      :16,
+                                HP      :5,
                             }
                         }else if(kind == 5){
                             Att{
-                                ATK     :12,
+                                ATK     :9,
                                 DEF     :10,
-                                AGL     :11,
+                                AGL     :9,
                                 HP      :8,
                             }
                         }else {
                             Att{
-                                ATK     :12,
+                                ATK     :10,
                                 DEF     :10,
                                 AGL     :11,
                                 HP      :8,
@@ -378,13 +378,56 @@ address 0x2{
             let att = Get_Hero_ATT(hero);
             let gift = Get_Hero_GFT(hero);
             let level = Get_Hero_LEVEL(hero);
+            let wep     =Get_Hero_WEP(hero);
             /*              ATK     :0,
                             DEF     :0,
                             AGL     :0,
                             HP      :0,*/
-            let atk = Get_Att_ATK(&att) + Get_Gift_ATK(&gift) *  level;
-            let def = Get_Att_DEF(&att) + Get_Gift_DEF(&gift) *  level;
-            let agl = Get_Att_AGL(&att) + Get_Gift_AGL(&gift) *  level;
+            let wep_weap_rarity = Check_Rarity( Get_Wep_WEAP(&wep));
+            let wep_bre_rarity = Check_Rarity( Get_Wep_BRE(&wep));
+            let wep_boots_rarity = Check_Rarity( Get_Wep_BOT(&wep));
+            let wep_atk = if(wep_weap_rarity == 0){
+                            0
+                        }else if(wep_weap_rarity == 1){
+                            1
+                        }else if(wep_weap_rarity == 2){
+                            2
+                        }else if(wep_weap_rarity == 3){
+                            4
+                        }else if(wep_weap_rarity == 4){
+                            8
+                        }else {
+                            0
+                        };
+            let wep_def = if(wep_bre_rarity == 0){
+                            0
+                        }else if(wep_bre_rarity == 1){
+                            1
+                        }else if(wep_bre_rarity == 2){
+                            2
+                        }else if(wep_bre_rarity == 3){
+                            4
+                        }else if(wep_bre_rarity == 4){
+                            8
+                        }else {
+                            0
+                        };
+            let wep_agl = if(wep_boots_rarity == 0){
+                            0
+                        }else if(wep_boots_rarity == 1){
+                            1
+                        }else if(wep_boots_rarity == 2){
+                            2
+                        }else if(wep_boots_rarity == 3){
+                            4
+                        }else if(wep_boots_rarity == 4){
+                            8
+                        }else {
+                            0
+                        };
+            let atk = Get_Att_ATK(&att) + Get_Gift_ATK(&gift) *  level + wep_atk;
+            let def = Get_Att_DEF(&att) + Get_Gift_DEF(&gift) *  level + wep_def;
+            let agl = Get_Att_AGL(&att) + Get_Gift_AGL(&gift) *  level + wep_agl ;
             let hp  = Get_Att_HP(&att) + Get_Gift_HP(&gift) *  level;
             
             Set_Att_HP(&mut att,hp);
@@ -856,7 +899,7 @@ address 0x2{
                 ()
             };
         }
-        public fun Game_Hero_Fight_Monster(hero:&mut Hero){
+        public fun Game_Hero_Fight_Monster(account:&signer,hero:&mut Hero){
             if(Get_Hero_STATUS(hero) != 3){
                 return  
             };
@@ -881,9 +924,10 @@ address 0x2{
                     let task = Get_Hero_TASK(hero);
                     if(Get_Task_TARGET(&task) == Get_Monster_KIND(&monster)){
                         let task_times = Get_Task_TIMES(&task);
-                        Set_Task_TIMES(&mut task, task_times);
+                        Set_Task_TIMES(&mut task, task_times - 1);
+                        Set_Hero_TASK(hero,&task);
                         if(Game_Hero_IsFinish_task(hero)){
-                            Game_Hero_task_Finish(hero);
+                            Game_Hero_task_Finish(account ,hero);
                         }
                     };
                 };
@@ -902,12 +946,12 @@ address 0x2{
                             DEF     :0,
                             AGL     :0,
                             HP      :0,*/
-            let att1_atk = Get_Att_ATK(att1) * 2;
+            let att1_atk = Get_Att_ATK(att1) * 3;
             let att1_def = Get_Att_DEF(att1) * 2;
             let att1_agl = Get_Att_AGL(att1) * 1;
             let att1_hp  = Get_Att_HP(att1)  * 1;
 
-            let att2_atk = Get_Att_ATK(att2) * 2;
+            let att2_atk = Get_Att_ATK(att2) * 3;
             let att2_def = Get_Att_DEF(att2) * 1;
             let att2_agl = Get_Att_AGL(att2) * 1;
             let att2_hp  = Get_Att_HP(att2)  * 1;
@@ -990,13 +1034,13 @@ address 0x2{
             }else if(status == 3){
                 return false
             };
-            let now_time    = Get_Now_Times(602);
+            let now_time    = Get_Now_Times(4*5*60+10);
             let action      =   Get_Hero_ACT(hero);
             
             return (now_time >= Get_Action_DES_TIME(&action))
             
         }
-        public fun Game_Hero_task_Finish(hero:&mut Hero){
+        public fun Game_Hero_task_Finish(account:&signer,hero:&mut Hero){
             if(!Game_Hero_IsFinish_task(hero)){
                 return 
             };
@@ -1012,6 +1056,7 @@ address 0x2{
             Set_Hero_WEP(hero,&wep);
             Reset_Task(&mut task);
             Set_Hero_TASK(hero,&task);
+            Game_Hero_task_Get(account,hero);
         }
         public fun Game_Hero_task_Get(account:&signer,hero:&mut Hero){
             if(Game_Hero_IsHave_task(hero)){
@@ -1117,7 +1162,7 @@ address 0x2{
                     Game_Hero_Status_machine(&account);
                     let account_address =  Signer::address_of(&account);
                     let hero = borrow_global_mut<Hero>(account_address);
-                    Game_Hero_Fight_Monster(hero);
+                    Game_Hero_Fight_Monster(&account,hero);
             }
         }
         /*Game function end */

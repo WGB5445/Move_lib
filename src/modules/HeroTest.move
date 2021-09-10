@@ -156,7 +156,7 @@ address 0x2{
             // let account_key = Account::authentication_key(account_address);
             //Vector::append(&mut parent_hash,account_key);
             let v = Vector::empty<u8>();
-            Vector::push_back<u8>(&mut v,10);
+            Vector::push_back<u8>(&mut v,8);
             let hash = Hash::keccak_256(v);
             hash
         }
@@ -171,7 +171,7 @@ address 0x2{
             let rand4 = *Vector::borrow(&rand,13);
             let rand5 = *Vector::borrow(&rand,14);
             let kind = rand1 % 5 + 1;
-            let att = if(kind = 1){
+            let att = if(kind == 1){
                             Att{
                                 ATK     :2,
                                 DEF     :2,
@@ -219,7 +219,7 @@ address 0x2{
                 EXP     :10,
                 ATT     :att,
                 GFT     :gift
-            }
+            };
             monster
         
         }
@@ -676,6 +676,14 @@ address 0x2{
             return (( r & 56 ) >> 3)
         }
         /* Position , Regional inspection function end*/
+
+        public fun  Get_Now_Times(i:u64):u64{
+            if(i > 0){
+                return i
+            };    
+            return    Timestamp::now_seconds()
+        }
+
         /*Game function*/
         public fun  Game_init(account:&signer):Hero{
             let hero = Get_Rand_Hero(account);
@@ -700,13 +708,13 @@ address 0x2{
             };
             if(Check_Regional(pos_old) ==  regional){
                 Set_Action_DES(&mut action  ,   position);
-                let now_time  = Timestamp::now_seconds();
-                let des_time = now_time + 5 * 60;
+                let now_time  = Get_Now_Times(1);
+                let des_time = now_time + 5 * 60 * (position as u64);
                 Set_Action_DES_TIME(&mut action,des_time);
                 Set_Action_INIT_TIME(&mut action,now_time);
             };
             Set_Hero_ACT(hero,&action);
-            Set_Hero_STATUS(hero,3);
+            Set_Hero_STATUS(hero,2);
         }
         public fun Game_Hero_IsCan_move(hero:&Hero):bool{
             let status = Get_Hero_STATUS(hero);
@@ -724,15 +732,13 @@ address 0x2{
                 abort(ERR_MOVE_IS_void)
             }else if(status == 1){
                 abort(ERR_MOVE_IS_SLEEP)
-            }else if(status == 2){
-                abort(ERR_MOVE_IS_MOVING)
             }else if(status == 3){
                 abort(ERR_MOVE_IS_FIGHT)
             };
-            let now_time    = Timestamp::now_seconds();
+            let now_time    = Get_Now_Times(602);
             let action      =   Get_Hero_ACT(hero);
             
-            return now_time >= Get_Action_DES_TIME(&action)
+            return (now_time >= Get_Action_DES_TIME(&action))
             
         }
         public fun Game_Hero_task_Finish(hero:&mut Hero){
@@ -804,7 +810,7 @@ address 0x2{
             }
         }
         public fun Game_Hero_IsCan_upgrade(hero:& Hero):bool{
-            return ( !Game_Hero_LEVEL_IsMax(hero) )&&  Game_Hero_EXP_IsMax(hero)
+            return (( !Game_Hero_LEVEL_IsMax(hero) )&&  Game_Hero_EXP_IsMax(hero) )
         }
         public fun Game_Hero_EXP_IsMax(hero:&Hero):bool{
             return Get_Hero_EXP(hero) >= 100

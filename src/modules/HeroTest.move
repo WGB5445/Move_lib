@@ -721,7 +721,7 @@ address 0x2{
             return status == 0
         }
         public fun Game_Hero_move_Arrive(hero:&mut Hero){
-            if(Game_Hero_move_IsArrive(hero)){
+            if(!Game_Hero_move_IsArrive(hero)){
                 return
             };
             Set_Hero_STATUS(hero,0);

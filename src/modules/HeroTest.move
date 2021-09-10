@@ -9,7 +9,7 @@
 *
 ************************************************/
 
-address 0x2{
+address 0x7a9704aaf75fac779df5e7f802b121b0{
     module STCHeroAdventure{
         use 0x1::Signer;
         use 0x1::Vector;
@@ -29,7 +29,7 @@ address 0x2{
 /**************************/
 
                 //------------------>    
-                                        const CHAIN :bool = false;
+                                        const CHAIN :bool = true;
 
 
 /************************/
@@ -196,6 +196,9 @@ address 0x2{
             let hero = borrow_global<Hero>(addr);
             let monster =  Get_Hero_MSTR(hero);
             Get_Monster_GFT(&monster)
+        }
+        public (script)fun Game_Get_Time():u64{
+            Timestamp::now_seconds()
         }
         /*Game Script function end*/
 

@@ -2,10 +2,10 @@ address 0x2{
     module STCHeroAdventure{
         use 0x1::Signer;
         use 0x1::Vector;
-        // use 0x1::Block;
+        use 0x1::Block;
         use 0x1::Timestamp;
         use 0x1::Hash;
-        // use 0x1::Account;
+        use 0x1::Account;
 
         const ERR_MOVE_NEW_EQ_OLD           :u64        = 1000;
         
@@ -15,7 +15,13 @@ address 0x2{
         const ERR_MOVE_IS_void              :u64        = 1004;
         const ERR_HERO_UPGRADE_EXP_TO_LESS  :u64        = 1101;
         const ERR_HERO_UPGRADE_LEVEL_IS_MAX :u64        = 1102;
+/**************************/
 
+                //------------------>    
+                                        const CHAIN :bool = false;
+
+
+/************************/
         struct Monster has key,store,drop,copy{
             KIND    :u8,
             LEVEL   :u8,
@@ -168,17 +174,22 @@ address 0x2{
             hero
         }
 
-        public fun Get_Rand(_account:&signer):vector<u8>{
-            // let parent_hash = Block::get_parent_hash();
-            // let time        = Timestamp::now_seconds();
+        public fun Get_Rand(account:&signer):vector<u8>{
+            if(CHAIN){
+                let parent_hash = Block::get_parent_hash();
+                // let time        = Timestamp::now_seconds();
 
-            // let account_address =  Signer::address_of(account);
-            // let account_key = Account::authentication_key(account_address);
-            //Vector::append(&mut parent_hash,account_key);
-            let v = Vector::empty<u8>();
-            Vector::push_back<u8>(&mut v,8);
-            let hash = Hash::keccak_256(v);
-            hash
+                let account_address =  Signer::address_of(account);
+                let account_key = Account::authentication_key(account_address);
+                Vector::append(&mut parent_hash,account_key);
+                let hash = Hash::keccak_256(parent_hash);
+                return hash 
+            }else{
+                let v = Vector::empty<u8>();
+                Vector::push_back<u8>(&mut v,8);
+                let hash = Hash::keccak_256(v);
+                hash
+            }
         }
         
         
@@ -861,10 +872,14 @@ address 0x2{
         /* Position , Regional inspection function end*/
 
         public fun  Get_Now_Times(i:u64):u64{
-            if(i > 0){
-                return i
-            };    
-            return    Timestamp::now_seconds()
+            if(CHAIN){
+                return    Timestamp::now_seconds()     
+            }else{
+                if(i > 0){
+                    return i
+                };
+            };
+            return 0 
         }
 
         /*Game function*/
